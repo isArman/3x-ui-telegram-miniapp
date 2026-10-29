@@ -1,0 +1,476 @@
+openapi: 3.0.3
+info:
+  title: Proxy Subscription API
+  version: 1.0.0
+  description: |
+    Backend API for Telegram Mini App proxy subscription management.
+    Uses modular monolith architecture with PostgreSQL, Flyway migrations,
+    and 3x-ui external subscription integration.
+servers:
+  - url: http://localhost:8080
+  - url: https://api.example.com
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: UP
+
+  /plans:
+    get:
+      summary: List available subscription plans (public)
+      operationId: listPublicPlans
+      responses:
+        '200':
+          description: List of plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plan'
+
+  /admin/plans:
+    get:
+      summary: List all plans (admin only)
+      operationId: listAdminPlans
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of plans
+        '403':
+          description: Access denied
+
+    post:
+      summary: Create a new plan (admin only)
+      operationId: createPlan
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanInput'
+      responses:
+        '201':
+          description: Plan created
+        '403':
+          description: Access denied
+
+  /admin/plans/{id}:
+    put:
+      summary: Update a plan (admin only)
+      operationId: updatePlan
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanInput'
+      responses:
+        '200':
+          description: Plan updated
+        '403':
+          description: Access denied
+
+    delete:
+      summary: Delete a plan (admin only)
+      operationId: deletePlan
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Plan deleted
+        '403':
+          description: Access denied
+
+  /orders:
+    post:
+      summary: Create an order (customer)
+      operationId: createOrder
+      parameters:
+        - name: X-Telegram-Init-Data
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Telegram-Bot-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+      responses:
+        '201':
+          description: Order created
+        '401':
+          description: Telegram authentication failed
+
+  /admin/orders:
+    get:
+      summary: List all orders (admin only)
+      operationId: listAdminOrders
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of orders
+        '403':
+          description: Access denied
+
+  /receipts/upload:
+    post:
+      summary: Upload a receipt image (customer)
+      operationId: uploadReceipt
+      parameters:
+        - name: X-Telegram-Init-Data
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Telegram-Bot-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Receipt image file
+                orderId:
+                  type: integer
+      responses:
+        '201':
+          description: Receipt uploaded
+        '401':
+          description: Telegram authentication failed
+
+  /receipts/order/{orderId}:
+    get:
+      summary: List receipts for an order (admin only)
+      operationId: getReceiptsForOrder
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of receipts
+        '403':
+          description: Access denied
+
+  /receipts/download/{receiptId}:
+    get:
+      summary: Download receipt file (admin only)
+      operationId: downloadReceipt
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Receipt file
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Access denied
+
+  /admin/payments/approve:
+    post:
+      summary: Approve payment (admin only)
+      operationId: approvePayment
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentActionInput'
+      responses:
+        '200':
+          description: Payment approved
+        '403':
+          description: Access denied
+        '409':
+          description: Duplicate approval
+
+  /admin/payments/reject:
+    post:
+      summary: Reject payment (admin only)
+      operationId: rejectPayment
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentActionInput'
+      responses:
+        '200':
+          description: Payment rejected
+        '403':
+          description: Access denied
+
+  /admin/payments/audit/{orderId}:
+    get:
+      summary: Get audit trail for an order (admin only)
+      operationId: getAuditTrail
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Audit trail
+        '403':
+          description: Access denied
+
+  /admin/provisioning/retry:
+    post:
+      summary: Retry subscription provisioning (admin only)
+      operationId: retryProvisioning
+      security:
+        - telegramHeader: []
+      parameters:
+        - name: X-Telegram-User-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProvisioningRetryInput'
+      responses:
+        '200':
+          description: Retry initiated
+        '403':
+          description: Access denied
+        '500':
+          description: Retry failed
+
+  /api-docs:
+    get:
+      summary: OpenAPI documentation
+      operationId: serveOpenApi
+      responses:
+        '200':
+          description: OpenAPI YAML spec
+
+components:
+  securitySchemes:
+    telegramHeader:
+      type: apiKey
+      in: header
+      name: X-Telegram-User-Id
+      description: Telegram user ID for authorization
+
+  schemas:
+    Plan:
+      type: object
+      required: [id, name, dataAllowanceGb, validityDurationDays, priceToman]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        dataAllowanceGb:
+          type: integer
+        validityDurationDays:
+          type: integer
+        priceToman:
+          type: number
+          format: decimal
+
+    PlanInput:
+      type: object
+      required: [name, dataAllowanceGb, validityDurationDays, priceToman]
+      properties:
+        name:
+          type: string
+        dataAllowanceGb:
+          type: integer
+        validityDurationDays:
+          type: integer
+        priceToman:
+          type: number
+          format: decimal
+
+    Order:
+      type: object
+      required: [id, telegramUserId, planId, status]
+      properties:
+        id:
+          type: integer
+        telegramUserId:
+          type: integer
+        planId:
+          type: integer
+        planSnapshotName:
+          type: string
+        planSnapshotDataGb:
+          type: integer
+        planSnapshotDurationDays:
+          type: integer
+        planSnapshotPriceToman:
+          type: number
+          format: decimal
+        status:
+          type: string
+          enum: [CREATED, PENDING_PAYMENT, PAYMENT_APPROVED, PROVISIONING_PENDING, PROVISIONED, PROVISIONING_FAILED, REJECTED]
+        createdAt:
+          type: string
+          format: date-time
+
+    OrderInput:
+      type: object
+      required: [planId]
+      properties:
+        planId:
+          type: integer
+
+    PaymentAudit:
+      type: object
+      required: [id, orderId, adminTelegramUserId, action, createdAt]
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        adminTelegramUserId:
+          type: integer
+        action:
+          type: string
+          enum: [RECEIPT_SUBMITTED, RECEIPT_APPROVED, RECEIPT_REJECTED, PAYMENT_CONFIRMED, PROVISIONING_ATTEMPTED, PROVISIONING_FAILED, PROVISIONING_SUCCEEDED, REPLACEMENT_RECEIPT_SUBMITTED]
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PaymentActionInput:
+      type: object
+      required: [orderId]
+      properties:
+        orderId:
+          type: integer
+        reason:
+          type: string
+
+    ProvisioningRetryInput:
+      type: object
+      required: [orderId, subscriptionUrl]
+      properties:
+        orderId:
+          type: integer
+        subscriptionUrl:
+          type: string
