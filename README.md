@@ -39,6 +39,64 @@ export SUBSCRIPTION_SERVICE_PASSWORD=<token>
 docker compose -f docker-compose.prod.yml up -d
 ```
 
+## Using Docker Compose
+
+### Development
+
+```bash
+# Build and start all services
+docker compose up --build
+
+# Start in background
+docker compose up -d --build
+
+# View logs
+docker compose logs -f backend
+
+# Stop services
+docker compose down
+
+# Stop and remove volumes (clean state)
+docker compose down -v
+```
+
+### Production
+
+```bash
+# Configure environment
+cp .env.example .env
+# Edit .env with production secrets
+
+# Deploy
+docker compose -f docker-compose.prod.yml up -d
+
+# Check health
+docker compose -f docker-compose.prod.yml ps
+
+# View logs
+docker compose -f docker-compose.prod.yml logs -f backend
+
+# Update image and restart
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### Database Access (Local)
+
+```bash
+docker exec -it proxy-subscription-postgres psql -U proxy_user -d proxy_subscription
+```
+
+### Backup via Docker Compose
+
+```bash
+# Database backup
+docker exec proxy-subscription-postgres pg_dump -U proxy_user -d proxy_subscription > backup_$(date +%Y%m%d).sql
+
+# Receipt backup
+docker compose exec backend tar -czf /backups/receipts_$(date +%Y%m%d).tar.gz receipts/
+```
+
 ## Health Check
 
 ```bash
