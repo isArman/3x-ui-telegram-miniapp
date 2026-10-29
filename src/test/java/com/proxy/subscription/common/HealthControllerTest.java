@@ -1,24 +1,24 @@
 package com.proxy.subscription.common;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.web.servlet.MockMvc;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = "spring.flyway.enabled=false")
+@WebMvcTest(com.proxy.subscription.common.config.HealthController.class)
 class HealthControllerTest {
 
-    private final TestRestTemplate restTemplate = new TestRestTemplate();
+    @Autowired
+    private MockMvc mockMvc;
 
     @Test
-    void healthEndpointReturnsUp() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/health", String.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo("UP");
+    void healthEndpointReturnsUp() throws Exception {
+        mockMvc.perform(get("/health"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("UP"));
     }
 }
