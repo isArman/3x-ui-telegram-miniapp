@@ -12,31 +12,28 @@ A modular monolith backend for an open-source Telegram Mini App that sells proxy
 - **Deployment**: Docker Compose
 - **CI**: GitHub Actions
 
-## Quick Start
+## Deployment
 
-### Local Development
+### Development (Localhost)
 
 ```bash
-# Clone and build
-mvn clean compile
-mvn test
-
-# Run with Docker Compose
 docker compose up --build
+curl http://localhost:8080/health
 ```
 
-### Production Deployment
+### Production (Domain + HTTPS via HAProxy)
 
 ```bash
+# Configure .env
 cp .env.example .env
-# Edit .env with production values
-export DB_PASSWORD=<secure-password>
-export ADMIN_TELEGRAM_IDS=<comma-separated-ids>
-export SUBSCRIPTION_SERVICE_URL=<3x-ui-panel-url>
-export SUBSCRIPTION_SERVICE_USERNAME=<token>
-export SUBSCRIPTION_SERVICE_PASSWORD=<token>
+# Set your domain, DB password, admin Telegram IDs, and 3x-ui credentials
 
+# Deploy with production compose
 docker compose -f docker-compose.prod.yml up -d
+
+# Configure HAProxy for HTTPS/domain
+# See haproxy/README.md for SSL certificate setup
+# Update haproxy.cfg with your domain (e.g., api.yourdomain.com)
 ```
 
 ## Using Docker Compose
@@ -110,7 +107,11 @@ Expected response: `UP`
 OpenAPI 3.0 spec available at:
 
 ```bash
+# Development
 curl http://localhost:8080/api-docs
+
+# Production (via domain + HAProxy)
+curl https://api.yourdomain.com/api-docs
 ```
 
 Or view the file directly: `src/main/resources/static/openapi.yaml`
