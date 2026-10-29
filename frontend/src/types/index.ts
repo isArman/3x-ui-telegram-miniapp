@@ -61,3 +61,26 @@ export interface CreatePlanRequest {
 export interface HealthStatus {
   status: string
 }
+
+// Telegram WebApp types
+export interface TelegramUser {
+  id: number
+  first_name: string
+  last_name?: string
+  username?: string
+  photo_url?: string
+  auth_date: number
+  hash: string
+}
+
+export interface TelegramInitData {
+  user?: TelegramUser
+  receiver?: TelegramUser
+  chat?: TelegramUser
+  chat_type?: string
+  chat_instance?: string
+  start_param?: string
+  can_send_after?: number
+  auth_date?: number
+  hash?: string
+}
