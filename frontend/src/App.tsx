@@ -7,8 +7,12 @@ import { OrderCreatePage } from './pages/OrderCreatePage'
 import { OrderDetailPage } from './pages/OrderDetailPage'
 import { PaymentPage } from './pages/PaymentPage'
 import { HealthPage } from './pages/HealthPage'
+import { AdminOrdersPage } from './pages/Admin/OrdersPage'
+import { AdminPlansPage } from './pages/Admin/PlansPage'
+import { AdminPaymentsPage } from './pages/Admin/PaymentsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { BottomNav } from './components/BottomNav'
+import { AdminNav } from './components/AdminNav'
 
 export const App: React.FC = () => {
   return (
@@ -22,6 +26,9 @@ export const App: React.FC = () => {
           <Route path="/order/:orderId" element={<OrderDetailPage />} />
           <Route path="/payment/:orderId" element={<PaymentPage />} />
           <Route path="/health" element={<HealthPage />} />
+          <Route path="/admin/orders" element={<AdminOrdersPage />} />
+          <Route path="/admin/plans" element={<AdminPlansPage />} />
+          <Route path="/admin/payments" element={<AdminPaymentsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
