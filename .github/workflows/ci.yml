@@ -17,8 +17,8 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-      - name: Dependency Check
-        run: mvn -B dependency:check
+      - name: Dependency Scan
+        run: mvn -B dependency:analyze
       - name: Build
         run: mvn -B clean compile
       - name: Test
@@ -29,5 +29,3 @@ jobs:
         run: |
           echo "Checking for hardcoded secrets..."
           grep -rni "password\|secret\|token" src/main/resources/ || true
-      - name: Dependency Scan
-        run: mvn -B dependency:analyze
