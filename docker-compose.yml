@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: proxy-subscription-postgres
+    environment:
+      POSTGRES_DB: proxy_subscription
+      POSTGRES_USER: proxy_user
+      POSTGRES_PASSWORD: proxy_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proxy_user -d proxy_subscription"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: proxy-subscription-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/proxy_subscription
+      SPRING_DATASOURCE_USERNAME: proxy_user
+      SPRING_DATASOURCE_PASSWORD: proxy_pass
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src:/app/src
+
+volumes:
+  postgres_data:
